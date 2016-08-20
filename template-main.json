@@ -1,6 +1,6 @@
 {
 		"AWSTemplateFormatVersion": "2010-09-09",
-		"Description": "QS(0016) Enterprise Accelerator - Provides nesting for required stacks to deploy a full sample web application with reverse proxy, ELBs, IAM, and other resources (for demonstration/POC/testing)",
+		"Description": "QS(0016) Enterprise Accelerator (GovReady version)- Provides nesting for required stacks to deploy a full sample web application with reverse proxy, ELBs, IAM, and other resources (for demonstration/POC/testing). Adapted by GovReady to a) use a t2.small bastion, and to exclude the ApplicationTemplate",
 		"Metadata": {
 			"AWS::CloudFormation::Interface": {
 				"ParameterGroups": [{
@@ -362,9 +362,7 @@
 						"pEnvironment": {
 							"Fn::FindInMap": ["CustomVariables", "vResourceEnvironmentTagValue", "Value"]
 						},
-						"pBastionInstanceType": {
-							"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "InstanceType"]
-						},
+						"pBastionInstanceType": "t2.small",
 						"pSupportsNatGateway": {
 							"Fn::FindInMap": ["RegionServiceSupport", {"Ref": "AWS::Region"}, "NatGateway"]
 						},
@@ -401,90 +399,6 @@
 						}
 					}
 				}
-			},
-			"ApplicationTemplate": {
-				"Type": "AWS::CloudFormation::Stack",
-				"DependsOn": "ProductionVpcTemplate",
-				"Properties": {
-					"TemplateURL": {
-						"Fn::Join": ["", [{
-							"Fn::FindInMap": ["CustomVariables", "vTemplateUrlPrefix", "Value"]
-						}, "templates/template-application.json"]]
-					},
-					"TimeoutInMinutes": "30",
-					"Parameters": {
-						"pSecurityAlarmTopic": {
-							"Fn::GetAtt": ["LoggingTemplate", "Outputs.rSecurityAlarmTopic"]
-						},
-						"pEC2KeyPair": {
-							"Ref": "pEC2KeyPair"
-						},
-						"pProductionCIDR": "10.100.0.0/16",
-						"pProductionVPC": {
-							"Fn::GetAtt": ["ProductionVpcTemplate", "Outputs.rVPCProduction"]
-						},
-						"pDMZSubnetA": {
-							"Fn::GetAtt": ["ProductionVpcTemplate", "Outputs.rDMZSubnetA"]
-						},
-						"pDMZSubnetB": {
-							"Fn::GetAtt": ["ProductionVpcTemplate", "Outputs.rDMZSubnetB"]
-						},
-						"pAppPrivateSubnetA": {
-							"Fn::GetAtt": ["ProductionVpcTemplate", "Outputs.rAppPrivateSubnetA"]
-						},
-						"pAppPrivateSubnetB": {
-							"Fn::GetAtt": ["ProductionVpcTemplate", "Outputs.rAppPrivateSubnetB"]
-						},
-						"pWebInstanceType": {
-							"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "InstanceType"]
-						},
-						"pAppInstanceType": {
-							"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "InstanceType"]
-						},
-						"pDBPrivateSubnetA": {
-							"Fn::GetAtt": ["ProductionVpcTemplate", "Outputs.rDBPrivateSubnetA"]
-						},
-						"pDBPrivateSubnetB": {
-							"Fn::GetAtt": ["ProductionVpcTemplate", "Outputs.rDBPrivateSubnetB"]
-						},
-						"pManagementCIDR": "10.10.0.0/16",
-						"pRegionAZ1Name": {"Ref":"pAvailabilityZoneA"},
-						"pRegionAZ2Name": {"Ref":"pAvailabilityZoneB"},
-						"pWebServerAMI": {
-							"Fn::FindInMap": ["RegionMap", {
-								"Ref": "AWS::Region"
-							}, "AMI"]
-						},
-						"pAppAmi": {
-							"Fn::FindInMap": ["RegionMap", {
-								"Ref": "AWS::Region"
-							}, "AMI"]
-						},
-						"pDBUser": "testuserdb",
-						"pDBName": "testDB",
-						"pDBPassword": {
-							"Ref": "pDBPassword"
-						},
-						"pDBClass": {
-							"Fn::FindInMap": ["RegionMap", {
-								"Ref": "AWS::Region"
-							}, "InstanceTypeDatabase"]
-						},
-						"pDBAllocatedStorage": "10",
-						"pEnvironment": {
-							"Fn::FindInMap": ["CustomVariables", "vResourceEnvironmentTagValue", "Value"]
-						},
-						"pBastionSSHCIDR": "0.0.0.0/0",
-						"pSupportsGlacier": {
-							"Fn::FindInMap": ["RegionServiceSupport", {
-								"Ref": "AWS::Region"
-							}, "Glacier"]
-						},
-						"pTemplateUrlPrefix": {
-							"Fn::FindInMap": ["CustomVariables", "vTemplateUrlPrefix", "Value"]
-						}
-					}
-				}
 			}
 		},
 		"Outputs": {
@@ -498,16 +412,6 @@
 				"Description": "Use this IP via SSH to connect to Bastion Instance",
 				"Value": {
 					"Fn::GetAtt": ["ManagementVpcTemplate", "Outputs.rBastionInstanceIP"]
-				}
-			},
-			"LandingPageURL": {
-				"Value": {
-					"Fn::GetAtt": ["ApplicationTemplate", "Outputs.LandingPageURL"]
-				}
-			},
-			"WebsiteURL": {
-				"Value": {
-					"Fn::GetAtt": ["ApplicationTemplate", "Outputs.WebsiteURL"]
 				}
 			},
 			"SurveyLink": {
